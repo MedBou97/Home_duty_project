@@ -350,6 +350,7 @@ INSERT INTO app_user (family_id, full_name, email, role) VALUES
 ((SELECT family_id FROM family WHERE name='Osman Family'),  'Zuber Alkatma',  'zuber@example.com',         'member'),
 ((SELECT family_id FROM family WHERE name='Osman Family'),  'Mustafa kucuk',  'mustafa@example.com',       'admin'),
 ((SELECT family_id FROM family WHERE name='Osman Family'),  'Report Member',  'report.user@example.com',   'member'),
+((SELECT family_id FROM family WHERE name='Osman Family'), 'Hussein Osman', 'hussein.admin@example.com',   'admin'),
 ((SELECT family_id FROM family WHERE name='Yilmaz Family'), 'Ayse Yilmaz',    'ayse@example.com',          'admin'),
 ((SELECT family_id FROM family WHERE name='Kaya Family'),   'Mehmet Kaya',    'mehmet@example.com',        'member'),
 ((SELECT family_id FROM family WHERE name='Demir Family'),  'Elif Demir',     'elif@example.com',          'member'),

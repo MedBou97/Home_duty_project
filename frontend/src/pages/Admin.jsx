@@ -197,7 +197,7 @@ export default function Admin() {
               </tr>
             </thead>
             <tbody>
-              {tasks.map((t) => (
+              {[...tasks].reverse().map((t) => (
                 <tr key={t.task_id} className="border-t border-slate-800">
                   <td className="py-2">{t.title}</td>
                   <td className="py-2 text-center">{t.frequency}</td>
