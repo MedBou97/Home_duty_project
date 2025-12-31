@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../api/auth.js";
+import { login, getUser } from "../api/auth.js";
 
 export default function Login() {
   const [email, setEmail] = useState("med@example.com");
@@ -8,12 +8,17 @@ export default function Login() {
   const [err, setErr] = useState("");
   const nav = useNavigate();
 
+  useEffect(() => {
+    const u = getUser();
+    if (u) nav("/dashboard", { replace: true });
+  }, [nav]);
+
   async function onSubmit(e) {
     e.preventDefault();
     setErr("");
     try {
       await login(email, password);
-      nav("/dashboard");
+      nav("/dashboard", { replace: true });
     } catch (e) {
       setErr(e.message);
     }

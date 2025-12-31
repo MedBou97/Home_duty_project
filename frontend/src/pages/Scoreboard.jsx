@@ -1,3 +1,4 @@
+import BackToDashboard from "../components/BackToDashboard.jsx";
 import { useState } from "react";
 import { api } from "../api/http.js";
 
@@ -14,7 +15,10 @@ export default function Scoreboard() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
       <div className="max-w-4xl mx-auto space-y-4">
-        <div className="text-xl font-bold">Scoreboard (VIEW)</div>
+        <div className="flex justify-between mt-5">
+          <BackToDashboard />
+          <p className="text-2xl font-bold pt-2 pr-2">Scoreboard</p>
+        </div>
         <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex gap-3 items-end">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-300">Week start</label>

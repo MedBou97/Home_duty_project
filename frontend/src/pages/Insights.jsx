@@ -1,3 +1,4 @@
+import BackToDashboard from "../components/BackToDashboard.jsx";
 import { useState } from "react";
 import { api } from "../api/http.js";
 
@@ -29,8 +30,10 @@ export default function Insights() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
       <div className="max-w-5xl mx-auto space-y-4">
-        <div className="text-xl font-bold">Insights</div>
-
+        <div className="flex justify-between mt-5">
+          <BackToDashboard />
+          <p className="text-2xl font-bold pt-2 pr-2">Insights</p>
+        </div>
         <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex gap-3 items-end flex-wrap">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-slate-300">Week start</label>
@@ -76,7 +79,7 @@ export default function Insights() {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4">
-            <div className="font-semibold mb-2">Pending tasks (EXCEPT)</div>
+            <div className="font-semibold mb-2">My Pending Tasks (EXCEPT)</div>
             {pending.map((p) => (
               <div key={p.task_id} className="py-1 text-slate-200">
                 {p.task_title}{" "}
@@ -89,7 +92,9 @@ export default function Insights() {
           </div>
 
           <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4">
-            <div className="font-semibold mb-2">Activity feed (UNION)</div>
+            <div className="font-semibold mb-2">
+              Family Activity feed (UNION)
+            </div>
             {activity.slice(0, 10).map((a) => (
               <div key={a.assignment_id} className="py-1">
                 <span className="text-slate-200">{a.full_name}</span> •{" "}
