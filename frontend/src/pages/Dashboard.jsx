@@ -2,31 +2,46 @@ import { useEffect, useState } from "react";
 import { api } from "../api/http.js";
 import { getUser, logout } from "../api/auth.js";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Dashboard() {
   const user = getUser();
   const nav = useNavigate();
   const [week, setWeek] = useState("2026-01-05");
   const [rows, setRows] = useState([]);
-  const [msg, setMsg] = useState("");
 
   async function load() {
-    setMsg("");
-    const data = await api(`/api/assignments/mine?week=${week}`);
-    setRows(data);
+    try {
+      const data = await api(`/api/assignments/mine?week=${week}`);
+      setRows(data);
+    } catch (e) {
+      toast.error(e.message || "Failed to load assignments");
+    }
   }
 
   async function markDone(id) {
-    const r = await api(`/api/assignments/${id}/status`, {
-      method: "PATCH",
-      body: { status: "done" },
-    });
-    if (r.triggerMessage) setMsg(r.triggerMessage);
-    await load();
+    try {
+      const r = await api(`/api/assignments/${id}/status`, {
+        method: "PATCH",
+        body: { status: "done" },
+      });
+
+      const parts = [];
+      if (r.triggerMessage) parts.push(r.triggerMessage);
+      if (r.badge) parts.push(`New badge: ${r.badge}`);
+      if (typeof r.pointsTotal === "number")
+        parts.push(`Total points: ${r.pointsTotal}`);
+
+      toast.success(parts.length ? parts.join(" • ") : "Marked as done");
+
+      await load();
+    } catch (e) {
+      toast.error(e.message || "Failed to update status");
+    }
   }
 
   useEffect(() => {
-    load().catch((e) => setMsg(e.message));
+    load();
   }, []);
 
   return (
@@ -83,11 +98,10 @@ export default function Dashboard() {
           </div>
           <button
             className="px-4 py-3 rounded-xl bg-blue-600"
-            onClick={() => load().catch((e) => setMsg(e.message))}
+            onClick={() => load()}
           >
             Load
           </button>
-          {msg && <div className="text-sm text-emerald-300">{msg}</div>}
         </div>
 
         <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4">
@@ -112,11 +126,7 @@ export default function Dashboard() {
                     {r.status !== "done" && (
                       <button
                         className="px-3 py-2 rounded-xl bg-emerald-600"
-                        onClick={() =>
-                          markDone(r.assignment_id).catch((e) =>
-                            setMsg(e.message)
-                          )
-                        }
+                        onClick={() => markDone(r.assignment_id)}
                       >
                         Mark done
                       </button>

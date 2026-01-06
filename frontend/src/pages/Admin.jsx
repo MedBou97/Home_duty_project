@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/http.js";
 import BackToDashboard from "../components/BackToDashboard.jsx";
+import toast from "react-hot-toast";
 
 export default function Admin() {
   const [tasks, setTasks] = useState([]);
@@ -14,17 +15,17 @@ export default function Admin() {
   };
   const [form, setForm] = useState(emptyForm);
 
-  const [editingId, setEditingId] = useState(null); // <-- NEW
-  const [msg, setMsg] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const titleOk = form.title.trim().length > 0;
 
   async function load() {
-    setMsg("");
-    setTasks(await api("/api/tasks"));
+    const data = await api("/api/tasks");
+    setTasks(data);
   }
 
   async function create() {
     const created = await api("/api/tasks", { method: "POST", body: form });
-    setMsg("Task created ✅");
+    toast.success("Task created");
     setForm(emptyForm);
     setTasks((prev) => [...prev, created]);
   }
@@ -37,13 +38,13 @@ export default function Admin() {
       difficulty: task.difficulty,
       is_active: task.is_active,
     });
-    setMsg(`Editing: ${task.title}`);
+    toast(`Editing: ${task.title}`, { icon: "✏️" });
   }
 
   function cancelEdit() {
     setEditingId(null);
     setForm(emptyForm);
-    setMsg("Edit canceled");
+    toast("Edit canceled", { icon: "↩️" });
   }
 
   async function update() {
@@ -52,7 +53,7 @@ export default function Admin() {
       body: form,
     });
 
-    setMsg("Task updated ✅");
+    toast.success("Task updated");
     setEditingId(null);
     setForm(emptyForm);
 
@@ -64,7 +65,7 @@ export default function Admin() {
   async function remove(id) {
     await api(`/api/tasks/${id}`, { method: "DELETE" });
     setTasks((prev) => prev.filter((x) => x.task_id !== id));
-    setMsg("Task deleted ✅");
+    toast.success("Task deleted");
   }
 
   async function assignRandom() {
@@ -72,11 +73,11 @@ export default function Admin() {
       method: "POST",
       body: { week_start: week },
     });
-    setMsg(`Assigned ${rows.length} tasks for week ${week} ✅`);
+    toast.success(`Assigned ${rows.length} tasks for week ${week}`);
   }
 
   useEffect(() => {
-    load().catch((e) => setMsg(e.message));
+    load().catch((e) => toast.error(e.message));
   }, []);
 
   return (
@@ -136,19 +137,30 @@ export default function Admin() {
           <div className="flex gap-2">
             {!editingId ? (
               <button
-                className="px-4 py-3 rounded-xl bg-blue-600"
-                onClick={() => create().catch((e) => setMsg(e.message))}
+                className={`px-4 py-3 rounded-xl ${
+                  titleOk
+                    ? "bg-blue-600"
+                    : "bg-blue-400 opacity-50 cursor-not-allowed"
+                }`}
+                disabled={!titleOk}
+                onClick={() => create().catch((e) => toast.error(e.message))}
               >
                 Create
               </button>
             ) : (
               <>
                 <button
-                  className="px-4 py-3 rounded-xl bg-emerald-600"
-                  onClick={() => update().catch((e) => setMsg(e.message))}
+                  className={`px-4 py-3 rounded-xl ${
+                    titleOk
+                      ? "bg-emerald-600"
+                      : "bg-emerald-400 opacity-50 cursor-not-allowed"
+                  }`}
+                  disabled={!titleOk}
+                  onClick={() => update().catch((e) => toast.error(e.message))}
                 >
                   Update
                 </button>
+
                 <button
                   className="px-4 py-3 rounded-xl bg-slate-800"
                   onClick={cancelEdit}
@@ -158,8 +170,6 @@ export default function Admin() {
               </>
             )}
           </div>
-
-          {msg && <div className="text-sm text-emerald-300">{msg}</div>}
         </div>
 
         {/* Auto assign */}
@@ -176,7 +186,9 @@ export default function Admin() {
             </div>
             <button
               className="px-4 py-3 rounded-xl bg-emerald-600"
-              onClick={() => assignRandom().catch((e) => setMsg(e.message))}
+              onClick={() =>
+                assignRandom().catch((e) => toast.error(e.message))
+              }
             >
               Assign Random
             </button>
@@ -215,7 +227,7 @@ export default function Admin() {
                     <button
                       className="px-3 py-2 rounded-xl bg-red-600"
                       onClick={() =>
-                        remove(t.task_id).catch((e) => setMsg(e.message))
+                        remove(t.task_id).catch((e) => toast.error(e.message))
                       }
                     >
                       Delete
