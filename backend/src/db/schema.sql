@@ -125,7 +125,10 @@ WHERE a.status = 'missed';
    - assigns randomly to a member of the same family
    - returns inserted rows (for UI to list)
    ------------------------------------------------------------ */
-CREATE OR REPLACE FUNCTION assign_tasks_random(p_family_id INT, p_week_start DATE)
+CREATE OR REPLACE FUNCTION homeduty.assign_tasks_random(
+  p_family_id INT,
+  p_week_start DATE
+)
 RETURNS TABLE (
   assignment_id INT,
   task_id INT,
@@ -135,30 +138,73 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  v_user_count INT;
 BEGIN
-  INSERT INTO assignment (task_id, assigned_to, week_start, status)
+  SELECT COUNT(*) INTO v_user_count
+  FROM homeduty.app_user u
+  WHERE u.family_id = p_family_id;
+
+  IF v_user_count = 0 THEN
+    RAISE EXCEPTION 'No users found for family_id=%', p_family_id;
+  END IF;
+
+  INSERT INTO homeduty.assignment (task_id, assigned_to, week_start, status)
   SELECT
     t.task_id,
-    (SELECT u.user_id
-     FROM app_user u
-     WHERE u.family_id = p_family_id
-     ORDER BY random()
-     LIMIT 1),
+    u.user_id,
     p_week_start,
     'assigned'
-  FROM task t
-  WHERE t.family_id = p_family_id
-    AND t.is_active = TRUE;
+  FROM (
+    SELECT
+      tk.task_id AS task_id,
+      ROW_NUMBER() OVER (ORDER BY random()) AS rn
+    FROM homeduty.task tk
+    WHERE tk.family_id = p_family_id
+      AND tk.is_active = TRUE
+  ) AS t
+  JOIN (
+    SELECT
+      au.user_id AS user_id,
+      ROW_NUMBER() OVER (
+        ORDER BY COALESCE(w.cnt, 0) ASC, random()
+      ) AS rn
+    FROM homeduty.app_user au
+    LEFT JOIN (
+      SELECT
+        a.assigned_to AS assigned_to,
+        COUNT(*) AS cnt
+      FROM homeduty.assignment a
+      WHERE a.week_start = p_week_start
+      GROUP BY a.assigned_to
+    ) AS w
+      ON w.assigned_to = au.user_id
+    WHERE au.family_id = p_family_id
+  ) AS u
+    ON ((t.rn - 1) % v_user_count) + 1 = u.rn
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM homeduty.assignment a2
+    WHERE a2.task_id = t.task_id
+      AND a2.week_start = p_week_start
+  );
 
   RETURN QUERY
-  SELECT a.assignment_id, a.task_id, a.assigned_to, a.week_start, a.status
-  FROM assignment a
-  JOIN task t ON t.task_id = a.task_id
-  WHERE t.family_id = p_family_id
-    AND a.week_start = p_week_start
-  ORDER BY a.assignment_id;
+  SELECT
+    a3.assignment_id,
+    a3.task_id,
+    a3.assigned_to,
+    a3.week_start,
+    a3.status
+  FROM homeduty.assignment a3
+  JOIN homeduty.task t2 ON t2.task_id = a3.task_id
+  WHERE t2.family_id = p_family_id
+    AND a3.week_start = p_week_start
+  ORDER BY a3.assignment_id;
 END;
 $$;
+
+
 
 /* ------------------------------------------------------------
    2) get_user_pending_tasks(user_id, week_start)
@@ -338,6 +384,7 @@ EXCEPTION WHEN insufficient_privilege THEN
 END;
 $$;
 
+
 -- ---------- SEED DATA (>= 10 rows per table) ----------
 -- 10 families
 INSERT INTO family (name) VALUES
@@ -398,3 +445,24 @@ WHERE week_start = DATE '2026-01-05'
 -- SELECT * FROM vw_week_activity_feed WHERE family_id = (SELECT family_id FROM family WHERE name='Osman Family') AND week_start = DATE '2026-01-05';
 -- SELECT * FROM get_user_pending_tasks((SELECT user_id FROM app_user WHERE email='hussein.admin@example.com'), DATE '2026-01-05');
 -- SELECT * FROM get_family_scoreboard_cursor((SELECT family_id FROM family WHERE name='Osman Family'), DATE '2026-01-05', 0);
+
+-- tables
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema='homeduty'
+ORDER BY table_name;
+
+-- sample: scoreboard view exists
+SELECT * FROM homeduty.vw_weekly_scoreboard LIMIT 5;
+select * from homeduty.app_user;
+select * from homeduty.task;
+select * from homeduty.assignment;
+select f.name, u.full_name from homeduty.family f, homeduty.app_user u 
+where f.family_id = u.family_id and f.name = 'Osman Family';
+
+
+
+-- sample: your seeded users exist
+SELECT user_id, email, role, family_id
+FROM homeduty.app_user
+ORDER BY user_id;

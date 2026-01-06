@@ -34,34 +34,43 @@ export async function createTask(req, res) {
 }
 
 export async function updateTask(req, res) {
+  const familyId = req.user.familyId;
   const id = Number(req.params.id);
   const { title, frequency, difficulty, is_active } = req.body || {};
+
   const q = await pool.query(
     `UPDATE homeduty.task
-     SET title=COALESCE($2,title),
-         frequency=COALESCE($3,frequency),
-         difficulty=COALESCE($4,difficulty),
-         is_active=COALESCE($5,is_active)
-     WHERE task_id=$1
+     SET title=COALESCE($3,title),
+         frequency=COALESCE($4,frequency),
+         difficulty=COALESCE($5,difficulty),
+         is_active=COALESCE($6,is_active)
+     WHERE task_id=$1 AND family_id=$2
      RETURNING task_id, title, frequency, difficulty, is_active`,
     [
       id,
+      familyId,
       title ?? null,
       frequency ?? null,
       difficulty ?? null,
       is_active ?? null,
     ]
   );
+
   if (!q.rows[0]) return res.status(404).json({ error: "Task not found" });
   res.json(q.rows[0]);
 }
 
 export async function deleteTask(req, res) {
+  const familyId = req.user.familyId;
   const id = Number(req.params.id);
+
   const q = await pool.query(
-    `DELETE FROM homeduty.task WHERE task_id=$1 RETURNING task_id`,
-    [id]
+    `DELETE FROM homeduty.task
+     WHERE task_id=$1 AND family_id=$2
+     RETURNING task_id`,
+    [id, familyId]
   );
+
   if (!q.rows[0]) return res.status(404).json({ error: "Task not found" });
   res.json({ ok: true });
 }

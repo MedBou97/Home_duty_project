@@ -35,9 +35,22 @@ export async function updateStatus(req, res) {
   if (!q.rows[0])
     return res.status(404).json({ error: "Not found (or not yours)" });
 
+  // fetch badge + points_total to prove Trigger #2 ran
+  const u = await pool.query(
+    `SELECT badge, points_total
+     FROM homeduty.app_user
+     WHERE user_id=$1`,
+    [userId]
+  );
+
+  const badge = u.rows[0]?.badge ?? null;
+  const pointsTotal = u.rows[0]?.points_total ?? null;
+
   res.json({
     ...q.rows[0],
     triggerMessage: q.rows[0].last_trigger_msg || null,
+    badge,
+    pointsTotal,
   });
 }
 
