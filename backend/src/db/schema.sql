@@ -421,18 +421,6 @@ INSERT INTO task (family_id, title, frequency, difficulty, is_active) VALUES
 ((SELECT family_id FROM family WHERE name='Osman Family'), 'Water plants',         'daily',  1, TRUE),
 ((SELECT family_id FROM family WHERE name='Osman Family'), 'Feed pets',            'daily',  1, TRUE);
 
--- 10 assignments (week 2026-01-05). Start as 'assigned' so you can demo triggers by updating to 'done' from UI.
--- We assign first 10 tasks to Hussein/admin for simplicity; your UI can also call assign_tasks_random().
-INSERT INTO assignment (task_id, assigned_to, week_start, status)
-SELECT
-  t.task_id,
-  (SELECT user_id FROM app_user WHERE email='hussein.admin@example.com'),
-  DATE '2026-01-05',
-  'assigned'
-FROM task t
-WHERE t.family_id = (SELECT family_id FROM family WHERE name='Osman Family')
-ORDER BY t.task_id
-LIMIT 10;
 
 -- Demo: mark a few assignments as done to show trigger works (points_awarded + message + badge updates)
 -- (In your live demo, do this from the UI instead.)
